@@ -33,6 +33,8 @@ func SetupRouter() *gin.Engine {
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	// 添加路由处理程序
+	router.GET("/wx/auth/:code", controllers.GetWXAccessToken)
+	router.GET("/wx/user/:access_token/:openId", controllers.GetWXUserInfo)
 	router.GET("/users/:id", controllers.GetUserInfo)
 	router.PUT("/users/:id", controllers.UpdateUserInfo)
 

@@ -3,7 +3,7 @@ package main
 import "server/routes"
 
 const (
-	port = ":8080"
+	port = ":6666"
 )
 
 func main() {
