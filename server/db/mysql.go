@@ -2,26 +2,26 @@ package db
 
 import (
 	"fmt"
+	"server/config"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 var MYSQL *gorm.DB
 
 func init() {
-	// 创建数据库连接
-	dsn := "user:password@tcp(host:port)/database"
-	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
-	if err != nil {
-		// panic("Failed to connect to database")
-		fmt.Println(err)
-	}
+	//
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/ai_box?charset=utf8&parseTime=true", config.Cfg.MySql.Username, config.Cfg.MySql.Password, config.Cfg.MySql.Host, config.Cfg.MySql.Port)
 
-	// 设置数据库连接池参数等
-	// db.DB().SetMaxOpenConns(100)
-	// db.DB().SetMaxIdleConns(10)
-	// ...
+	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.LogLevel(config.Cfg.MySql.Level)),
+	})
+
+	if err != nil {
+		panic("Failed to connect to database")
+	}
 
 	MYSQL = db
 }

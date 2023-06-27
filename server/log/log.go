@@ -2,6 +2,7 @@ package log
 
 import (
 	"os"
+	"server/config"
 
 	"github.com/sirupsen/logrus"
 )
@@ -12,7 +13,7 @@ func init() {
 	log := logrus.New()
 
 	// 设置日志级别
-	log.SetLevel(logrus.DebugLevel)
+	log.SetLevel(logrus.Level(config.Cfg.Log.Level))
 
 	// 设置日志输出格式为 JSON 格式
 	log.SetFormatter(&logrus.JSONFormatter{})

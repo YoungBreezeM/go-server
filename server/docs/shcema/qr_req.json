@@ -1,0 +1,9 @@
+{
+    "expire_seconds": 120,
+    "action_name": "QR_SCENE",
+    "action_info": {
+        "scene": {
+            "scene_id": 123
+        }
+    }
+}

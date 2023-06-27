@@ -1,12 +1,15 @@
 package main
 
-import "server/routes"
-
-const (
-	port = ":6666"
+import (
+	"fmt"
+	"log"
+	"server/config"
+	"server/routes"
 )
 
 func main() {
 	r := routes.SetupRouter()
-	r.Run(port)
+	if err := r.Run(fmt.Sprintf("%s:%d", config.Cfg.Host, config.Cfg.Port)); err != nil {
+		log.Fatal(err)
+	}
 }

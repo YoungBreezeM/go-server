@@ -3,13 +3,21 @@ module server
 go 1.20
 
 require (
+	github.com/bogdanfinn/tls-client v1.3.12
 	github.com/gin-gonic/gin v1.9.0
-	github.com/satori/go.uuid v1.2.0
+	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/sirupsen/logrus v1.9.0
-	modernc.org/libc v1.22.6
+	gopkg.in/yaml.v2 v2.4.0
 )
 
-require github.com/google/uuid v1.3.0 // indirect
+require (
+	github.com/andybalholm/brotli v1.0.4 // indirect
+	github.com/bogdanfinn/fhttp v0.5.22
+	github.com/bogdanfinn/utls v1.5.16 // indirect
+	github.com/google/uuid v1.3.0
+	github.com/klauspost/compress v1.15.12 // indirect
+	github.com/tam7t/hpkp v0.0.0-20160821193359-2b70b4024ed5 // indirect
+)
 
 require (
 	github.com/KyleBanks/depth v1.2.1 // indirect

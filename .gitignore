@@ -1,0 +1,11 @@
+# Logs
+logs
+*.log
+
+build/*
+server/build/*
+server/test/*
+.env
+config.yaml
+pkg/*
+pkg.tar
