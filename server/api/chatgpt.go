@@ -1,15 +1,6 @@
 package api
 
 import (
-	"bufio"
-	"bytes"
-	"encoding/json"
-	"fmt"
-	"io"
-	"server/config"
-	"server/log"
-
-	http "github.com/bogdanfinn/fhttp"
 	tls_client "github.com/bogdanfinn/tls-client"
 	"github.com/google/uuid"
 )
@@ -122,64 +113,64 @@ var (
 	client, _ = tls_client.NewHttpClient(tls_client.NewNoopLogger(), options...)
 )
 
-func (msg APIRequest) SendMsg(ch map[string]chan []byte) {
-	err := client.SetProxy("socks5://127.0.0.1:8088")
-	if err != nil {
-		log.Log.Errorln(err)
-		return
-	}
-	apiUrl := "https://chat.openai.com/backend-api/conversation"
-	//
-	chatReq := NewChatGPTRequest()
-	if msg.ConversationID != "" && msg.ParentMessageID != "" {
-		chatReq.ConversationID = msg.ConversationID
-		chatReq.ParentMessageID = msg.ParentMessageID
-	}
+// func (msg APIRequest) SendMsg(ch map[string]chan []byte) {
+// 	err := client.SetProxy("socks5://127.0.0.1:8088")
+// 	if err != nil {
+// 		log.Log.Errorln(err)
+// 		return
+// 	}
+// 	apiUrl := "https://chat.openai.com/backend-api/conversation"
+// 	//
+// 	chatReq := NewChatGPTRequest()
+// 	if msg.ConversationID != "" && msg.ParentMessageID != "" {
+// 		chatReq.ConversationID = msg.ConversationID
+// 		chatReq.ParentMessageID = msg.ParentMessageID
+// 	}
 
-	chatReq.AddMessage(msg.Messages[0].Role, msg.Messages[0].Content)
-	//
-	body_json, err := json.Marshal(chatReq)
-	if err != nil {
-		log.Log.Errorln(err)
-	}
+// 	chatReq.AddMessage(msg.Messages[0].Role, msg.Messages[0].Content)
+// 	//
+// 	body_json, err := json.Marshal(chatReq)
+// 	if err != nil {
+// 		log.Log.Errorln(err)
+// 	}
 
-	request, err := http.NewRequest(http.MethodPost, apiUrl, bytes.NewBuffer(body_json))
-	if err != nil {
-		log.Log.Errorln(err)
-	}
-	// Clear cookies
-	request.Header.Set("Content-Type", "application/json")
-	request.Header.Set("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36")
-	request.Header.Set("Accept", "*/*")
-	request.Header.Set("Authorization", "Bearer "+config.ACCESSTOKEN)
-	request.Header.Set("Accept-Language", "zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6")
-	//
-	response, err := client.Do(request)
-	if err != nil {
-		log.Log.Errorln(err)
-	}
-	defer response.Body.Close()
-	log.Log.Info(response.Status)
-	//
-	if response.StatusCode == 200 {
-		reader := bufio.NewReader(response.Body)
-		for {
-			line, err := reader.ReadBytes('\n')
-			if err != nil {
-				if err == io.EOF {
-					break
-				}
-				log.Log.Errorln("Failed to read response:", err)
-				return
-			}
-			//
-			if len(line) > 1 {
-				fmt.Println(msg.ChatId)
-			}
-		}
+// 	request, err := http.NewRequest(http.MethodPost, apiUrl, bytes.NewBuffer(body_json))
+// 	if err != nil {
+// 		log.Log.Errorln(err)
+// 	}
+// 	// Clear cookies
+// 	request.Header.Set("Content-Type", "application/json")
+// 	request.Header.Set("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36")
+// 	request.Header.Set("Accept", "*/*")
+// 	request.Header.Set("Authorization", "Bearer "+config.ACCESSTOKEN)
+// 	request.Header.Set("Accept-Language", "zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6")
+// 	//
+// 	response, err := client.Do(request)
+// 	if err != nil {
+// 		log.Log.Errorln(err)
+// 	}
+// 	defer response.Body.Close()
+// 	log.Log.Info(response.Status)
+// 	//
+// 	if response.StatusCode == 200 {
+// 		reader := bufio.NewReader(response.Body)
+// 		for {
+// 			line, err := reader.ReadBytes('\n')
+// 			if err != nil {
+// 				if err == io.EOF {
+// 					break
+// 				}
+// 				log.Log.Errorln("Failed to read response:", err)
+// 				return
+// 			}
+// 			//
+// 			if len(line) > 1 {
+// 				fmt.Println(msg.ChatId)
+// 			}
+// 		}
 
-	} else {
-		log.Log.Warning(response.Status)
-	}
+// 	} else {
+// 		log.Log.Warning(response.Status)
+// 	}
 
-}
+// }

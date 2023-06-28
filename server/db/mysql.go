@@ -13,7 +13,7 @@ var MYSQL *gorm.DB
 
 func init() {
 	//
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/ai_box?charset=utf8&parseTime=true", config.Cfg.MySql.Username, config.Cfg.MySql.Password, config.Cfg.MySql.Host, config.Cfg.MySql.Port)
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/ai_box?charset=utf8mb4&parseTime=True&loc=Local", config.Cfg.MySql.Username, config.Cfg.MySql.Password, config.Cfg.MySql.Host, config.Cfg.MySql.Port)
 
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.LogLevel(config.Cfg.MySql.Level)),

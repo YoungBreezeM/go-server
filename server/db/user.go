@@ -22,7 +22,7 @@ func (User) TableName() string {
 func (user User) UserIsExistByOpenId() bool {
 	var count int64
 
-	if err := MYSQL.Model(user).Where("openid", user.OpenId).Count(&count).Error; err != nil {
+	if err := MYSQL.Model(user).Where("openId", user.OpenId).Count(&count).Error; err != nil {
 		log.Log.Errorln(err)
 		return false
 	}
@@ -45,7 +45,7 @@ func (user *User) FindUserById(id string) error {
 }
 
 func (user *User) FindUserByOpenId() error {
-	if err := MYSQL.First(user, "openid = ?", user.OpenId).Error; err != nil {
+	if err := MYSQL.First(user, "openId = ?", user.OpenId).Error; err != nil {
 		return err
 	}
 
@@ -61,9 +61,9 @@ func (user User) AddUser() error {
 	return nil
 }
 
-func (user User) UpdateUser() error {
+func (user User) UpdateUserStatus() error {
 
-	if err := MYSQL.Save(user).Error; err != nil {
+	if err := MYSQL.Model(&user).Where("openId = ?", user.OpenId).Update("status", user.Status).Error; err != nil {
 		return err
 	}
 

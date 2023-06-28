@@ -23,7 +23,7 @@ func init() {
 		Port:  8080,
 		MySql: MySql{},
 	}
-	yamlFile, err := os.ReadFile("config.yml")
+	yamlFile, err := os.ReadFile("config.yaml")
 	if err != nil {
 		log.Fatalf("Error reading YAML file: %v", err)
 	}

@@ -24,7 +24,7 @@ func Subscribe(openId string) {
 		}
 	} else {
 		user.Status = constant.SUBSCRIBE
-		if err := user.UpdateUser(); err != nil {
+		if err := user.UpdateUserStatus(); err != nil {
 			log.Log.Errorln(err)
 		}
 
@@ -38,7 +38,7 @@ func Unsubscribe(openId string) {
 	//update user status
 	if b {
 		user.Status = constant.UNSUBSCRIBE
-		if err := user.UpdateUser(); err != nil {
+		if err := user.UpdateUserStatus(); err != nil {
 			log.Log.Errorln(err)
 		}
 	}

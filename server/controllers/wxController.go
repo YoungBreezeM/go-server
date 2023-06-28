@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"io"
 	"net/http"
-	"server/api"
 	"server/config"
 	"server/constant"
 	"server/log"
@@ -32,45 +31,28 @@ func init() {
 	WechatOpenIdAndKey = make(map[string]string, 10)
 }
 
-// @Summary 获取微信access token
-// @Description 根据appId and appsecrt and code 获取access token
-// @Tags Auth
-// @Accept json
-// @Produce json
-// @Param code path uint true "认证code"
-// @Success 200 {object} models.
-// @Router /wx/auth/{code} [get]
-func GetWXAccessToken(c *gin.Context) {
-	// 处理获取用户信息的逻辑
-	code := c.Param("code")
-	wxUser := api.GetWXAccessTokenByCode(config.WX_APPID, config.WX_APPSECERT, code)
+// func GetWXAccessToken(c *gin.Context) {
+// 	code := c.Param("code")
+// 	wxUser := api.GetWXAccessTokenByCode(config.WX_APPID, config.WX_APPSECERT, code)
 
-	c.JSON(200, models.R[models.WXAuthToken]{
-		Status:  0,
-		Data:    wxUser,
-		Message: constant.SUCCESS,
-	})
-}
+// 	c.JSON(200, models.R[models.WXAuthToken]{
+// 		Status:  0,
+// 		Data:    wxUser,
+// 		Message: constant.SUCCESS,
+// 	})
+// }
 
-// @Summary 获取微信用户信息
-// @Description 根据用户accessToken and openID获取用户信息
-// @Tags Users
-// @Accept json
-// @Produce json
-// @Param id path uint true "用户ID"
-// @Success 200 {object} models.User
-// @Router /wx/user/{access_token}/{openId} [get]
-func GetWXUserInfo(c *gin.Context) {
-	// 处理获取用户信息的逻辑
-	accessToken := c.Param("access_token")
-	openId := c.Param("openId")
-	wxUser := api.GetWXUserInfo(accessToken, openId)
-	c.JSON(200, models.R[models.WXUserInfo]{
-		Status:  0,
-		Data:    wxUser,
-		Message: constant.SUCCESS,
-	})
-}
+// func GetWXUserInfo(c *gin.Context) {
+// 	// 处理获取用户信息的逻辑
+// 	accessToken := c.Param("access_token")
+// 	openId := c.Param("openId")
+// 	wxUser := api.GetWXUserInfo(accessToken, openId)
+// 	c.JSON(200, models.R[models.WXUserInfo]{
+// 		Status:  0,
+// 		Data:    wxUser,
+// 		Message: constant.SUCCESS,
+// 	})
+// }
 
 // func GetWeChatQrCode(c *gin.Context) {
 // 	sceneId := c.Param("sceneId")
@@ -235,6 +217,7 @@ func WatchWechatSubscribe(c *gin.Context) {
 	if callbackMsg.MsgType == "text" {
 		key := utils.GenerateRandomString(32)
 		var replyMsg models.TextReply
+		//
 		if callbackMsg.Content == "密钥" {
 			replyMsg = models.TextReply{
 				ToUserName:   callbackMsg.FromUserName,
@@ -250,7 +233,7 @@ func WatchWechatSubscribe(c *gin.Context) {
 				FromUserName: callbackMsg.ToUserName,
 				CreateTime:   time.Now().Unix(),
 				MsgType:      "text",
-				Content:      "您输入的关键词不对哦！",
+				Content:      "您输入的关键词不对哦！目前可用关键词为[密钥]",
 			}
 		}
 
@@ -335,7 +318,7 @@ func WechatCheckToken(c *gin.Context) {
 	echoStr := queryValues.Get("echostr")
 
 	// 将 token、timestamp 和 nonce 放入一个切片中，并按照字典顺序排序
-	params := []string{config.TOKEN, timestamp, nonce}
+	params := []string{config.Cfg.WeChat.Token, timestamp, nonce}
 	sort.Strings(params)
 
 	// 将排序后的参数拼接成一个字符串

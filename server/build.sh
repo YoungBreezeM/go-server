@@ -26,4 +26,4 @@ wechat:
   appSecert: xxxxxxxxxxxxxxxxxxxxxx
   token: xxxxxxxxxxxxxxxxxxxxxxxxxx
 EOF
-go build -o server -v -ldflags="-s -w" $basepath/main.go
+go build -o server -v -ldflags="-s -w" $basepath/main.go && upx -9 server
