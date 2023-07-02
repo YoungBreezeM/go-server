@@ -1,10 +1,7 @@
 {
-    "id": "default",
-    "botId": "default",
-    "session": "N/A",
-    "clientId": "4l3ik0tts6x",
-    "contextId": 5167,
-    "messages": [],
-    "newMessage": "怎么提高自己的情商",
-    "stream": true
+    "stream": true,
+    "model": "gpt-3.5-turbo",
+    "temperature": 0.5,
+    "presence_penalty": 0,
+    "frequency_penalty": 0
 }

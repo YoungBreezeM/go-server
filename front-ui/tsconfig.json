@@ -3,21 +3,34 @@
     "baseUrl": ".",
     "module": "ESNext",
     "target": "ESNext",
-    "lib": ["DOM", "ESNext"],
-    "strict": true,
+    "lib": [
+      "DOM",
+      "ESNext"
+    ],
+    "strict": false,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "jsx": "preserve",
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "noUnusedLocals": true,
-    "strictNullChecks": true,
+    "strictNullChecks": false,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": [
+        "./src/*"
+      ]
     },
-    "types": ["vite/client", "node", "naive-ui/volar"]
+    "types": [
+      "vite/client",
+      "node",
+      "naive-ui/volar"
+    ]
   },
-  "exclude": ["node_modules", "dist", "service"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    "service"
+  ]
 }

@@ -86,7 +86,7 @@ export function Chat<T>(op: any) {
   })
 }
 
-export function ChatGTP4<T>(op: any) {
+export function ChatGTP<T>(op: any) {
   return post<T>({
     url: '/v2/chat/completions',
     data: op,
@@ -107,7 +107,7 @@ export function CheckQrCodeIsScan<T>(sceneId: string) {
   })
 }
 
-export function Login<T>(key: string | undefined) {
+export function Login<T>(key: string | string[]) {
   return get<T>({
     url: `/loginByKey?key=${key}`,
   })

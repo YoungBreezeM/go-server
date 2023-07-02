@@ -6,7 +6,6 @@ import (
 	"server/constant"
 	"server/log"
 	"server/models"
-	"server/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -17,71 +16,15 @@ func init() {
 	ChatGPTResChan = make(map[string]chan []byte, 10)
 }
 
-// @Summary chatgtp send msg
-// @Description by openId and content
-// @Tags Auth
-// @Accept json
-// @Produce json
-// @Param code path uint true "chat gtp"
-// @Success 200 {object} .
-// @Router /chatgpt/chat [post]
-// func Chat(c *gin.Context) {
-
-// 	var cq api.APIRequest
-// 	if err := c.BindJSON(&cq); err != nil {
-// 		log.Log.Error(err)
-// 	}
-// 	//
-
-// 	token := c.GetHeader("Authorization")
-// 	tokenClaims, err := jwt.ParseWithClaims(token, &models.JWTClaims{}, func(token *jwt.Token) (interface{}, error) {
-// 		return config.JWTSECRET, nil
-// 	})
-// 	//
-// 	if err != nil {
-// 		log.Log.Errorln(err)
-// 	}
-// 	//
-// 	if tokenClaims != nil {
-// 		if claims, ok := tokenClaims.Claims.(*models.JWTClaims); ok && tokenClaims.Valid {
-// 			user, err := db.GetUserInfoByOpenId(claims.OpenId)
-// 			if err != nil {
-// 				log.Log.Errorln(err)
-// 				return
-// 			}
-// 			//send msg to chatgtp by api
-// 			log.Log.Info(user)
-// 			if user.Integral > 0 {
-// 				go cq.SendMsg(user, ChatGPTResChan)
-
-// 				c.JSON(200, models.R[models.User]{
-// 					Status:  0,
-// 					Data:    *user,
-// 					Message: constant.SUCCESS,
-// 				})
-
-// 			} else {
-// 				c.JSON(402, models.R[string]{
-// 					Status:  2,
-// 					Message: constant.NOT_ENOUGH_POINTS,
-// 				})
-// 			}
-// 		}
-
-// 	}
-
-// }
-
 func Gtp4Chat(c *gin.Context) {
 	var cq api.APIRequest
 	if err := c.BindJSON(&cq); err != nil {
 		log.Log.Error(err)
 	}
 	//
-	msg := api.NewGTP4Request()
-	msg.ClientId = utils.GenerateRandomString(12)
-	msg.ContextId = cq.ChatId
-	msg.NewMessage = cq.Messages[0].Content
+	msg := api.NewGTPRequest()
+	msg.Messages = cq.Messages
+	msg.ChatId = cq.ChatId
 	//
 	go msg.SendMsg(ChatGPTResChan)
 

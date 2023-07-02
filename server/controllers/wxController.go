@@ -3,10 +3,12 @@ package controllers
 import (
 	"crypto/sha1"
 	"encoding/hex"
+	"fmt"
 	"io"
 	"net/http"
 	"server/config"
 	"server/constant"
+	"server/db"
 	"server/log"
 	"server/models"
 	"server/services"
@@ -16,6 +18,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-redis/redis/v8"
 	"github.com/golang-jwt/jwt"
 )
 
@@ -170,33 +173,43 @@ func Login(c *gin.Context) {
 	}
 	log.Log.Debug(key)
 	//
-	if value, ok := WechatOpenIdAndKey[key]; ok {
-		nowTime := time.Now()
-		token := utils.GeneratorToken(&models.JWTClaims{
-			OpenId: value,
-			StandardClaims: jwt.StandardClaims{
-				ExpiresAt: nowTime.Add(time.Minute * 60).Unix(),
-				Issuer:    "ai box",
-				IssuedAt:  nowTime.Unix(),
-			},
-		})
-		delete(WechatOpenIdAndKey, key)
-		//
-		c.JSON(200, models.R[string]{
-			Status:  0,
-			Data:    token,
-			Message: constant.SUCCESS,
-		})
-	} else {
+	val, err := db.Redis.Get(c, key).Result()
+	if err != nil {
+		if err == redis.Nil {
+			c.JSON(401, models.R[string]{
+				Status:  401,
+				Message: constant.UNAITHORIZED,
+			})
+		}
 		c.JSON(401, models.R[string]{
-			Status:  0,
-			Message: constant.UNAITHORIZED,
+			Status:  401,
+			Message: err.Error(),
 		})
+		return
 	}
+
+	nowTime := time.Now()
+	token := utils.GeneratorToken(&models.JWTClaims{
+		OpenId: val,
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: nowTime.Add(time.Minute * 60).Unix(),
+			Issuer:    "FreeAiBox",
+			IssuedAt:  nowTime.Unix(),
+		},
+	})
+	db.Redis.Del(c, key)
+	//
+	c.JSON(200, models.R[string]{
+		Status:  0,
+		Data:    token,
+		Message: constant.SUCCESS,
+	})
+
 }
 
 // Watch user subscribe public number
 func WatchWechatSubscribe(c *gin.Context) {
+	c.Header("Content-Type", "application/xml")
 	callbackMsg := models.CallbackMsg{}
 	if err := c.ShouldBindXML(&callbackMsg); err != nil {
 		c.String(http.StatusBadRequest, err.Error())
@@ -215,31 +228,44 @@ func WatchWechatSubscribe(c *gin.Context) {
 	}
 
 	if callbackMsg.MsgType == "text" {
+		if !config.SysStatus {
+			replyMsg := models.TextReply{
+				ToUserName:   callbackMsg.FromUserName,
+				FromUserName: callbackMsg.ToUserName,
+				CreateTime:   time.Now().Unix(),
+				MsgType:      "text",
+				Content:      "系统正在维护中，请稍后再试，谢谢理解！",
+			}
+			c.XML(http.StatusOK, replyMsg)
+			return
+		}
 		key := utils.GenerateRandomString(32)
 		var replyMsg models.TextReply
 		//
-		if callbackMsg.Content == "密钥" {
+		if callbackMsg.Content == "链接" || callbackMsg.Content == "密钥" {
 			replyMsg = models.TextReply{
 				ToUserName:   callbackMsg.FromUserName,
 				FromUserName: callbackMsg.ToUserName,
 				CreateTime:   time.Now().Unix(),
 				MsgType:      "text",
-				Content:      key,
+				Content:      fmt.Sprintf("%s\n点开下面这个链接进入网页。\nhttp://localhost:3000/home?key=%s", config.DESC, key),
 			}
-			WechatOpenIdAndKey[key] = callbackMsg.FromUserName
+			//
+			db.Redis.Set(c, key, callbackMsg.FromUserName, time.Minute*60)
+			c.XML(http.StatusOK, replyMsg)
 		} else {
 			replyMsg = models.TextReply{
 				ToUserName:   callbackMsg.FromUserName,
 				FromUserName: callbackMsg.ToUserName,
 				CreateTime:   time.Now().Unix(),
 				MsgType:      "text",
-				Content:      "您输入的关键词不对哦！目前可用关键词为[密钥]",
+				Content:      "您输入的关键词不对哦！目前可用关键词为[链接]",
 			}
+			c.XML(http.StatusOK, replyMsg)
 		}
 
 		// 设置回复消息的Content-Type为XML
-		c.Header("Content-Type", "application/xml")
-		c.XML(http.StatusOK, replyMsg)
+
 	}
 }
 

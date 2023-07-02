@@ -10,7 +10,12 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 )
 
-require github.com/webview/webview v0.0.0-20230602035950-899018ad0e5c // indirect
+require (
+	github.com/cespare/xxhash/v2 v2.1.2 // indirect
+	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
+	github.com/go-redis/redis/v8 v8.11.5 // indirect
+	github.com/webview/webview v0.0.0-20230602035950-899018ad0e5c // indirect
+)
 
 require (
 	github.com/andybalholm/brotli v1.0.4 // indirect

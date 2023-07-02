@@ -10,11 +10,9 @@ type ApiMessage struct {
 	Content string `json:"content"`
 }
 type APIRequest struct {
-	ChatId          string       `json:"chatId"`
-	Messages        []ApiMessage `json:"messages"`
-	Model           string       `json:"model"`
-	ParentMessageID string       `json:"parent_message_id,omitempty"`
-	ConversationID  string       `json:"conversation_id,omitempty"`
+	ChatId   string       `json:"chatId"`
+	Messages []ApiMessage `json:"messages"`
+	Model    string       `json:"model"`
 }
 
 type chatgpt_message struct {

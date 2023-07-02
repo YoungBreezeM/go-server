@@ -3,16 +3,17 @@ import type { Ref } from 'vue'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
-import { NAutoComplete, NButton, NInput, useDialog, useMessage } from 'naive-ui'
+import { NAutoComplete, NButton, NInput, useDialog, useMessage, NSelect } from 'naive-ui'
 import html2canvas from 'html2canvas'
 import { Message } from './components'
 import { useScroll } from './hooks/useScroll'
 import { useChat } from './hooks/useChat'
-import { useUsingContext } from './hooks/useUsingContext'
+// import { useUsingContext } from './hooks/useUsingContext'
 import { HoverButton, SvgIcon } from '@/components/common'
 import { useBasicLayout } from '@/hooks/useBasicLayout'
-import { useChatStore, usePromptStore } from '@/store'
-import { fetchChatAPIProcess, ChatGTP4 } from '@/api'
+import { useChatStore, usePromptStore, useAuthStore } from '@/store'
+import { ChatGTP } from '@/api'
+import { ChatLayout } from './layout'
 import { t } from '@/locales'
 import { v4 } from 'uuid'
 let controller = new AbortController()
@@ -28,12 +29,12 @@ const chatStore = useChatStore()
 const { isMobile } = useBasicLayout()
 const { addChat, updateChat, updateChatSome, getChatByUuidAndIndex } = useChat()
 const { scrollRef, scrollToBottom, scrollToBottomIfAtBottom } = useScroll()
-const { usingContext } = useUsingContext()
+// const { usingContext } = useUsingContext()
 
 const { uuid } = route.params as { uuid: string }
 
 const dataSources = computed(() => chatStore.getChatByUuid(+uuid))
-const conversationList = computed(() => dataSources.value.filter(item => (!item.inversion && !!item.conversationOptions)))
+// const conversationList = computed(() => dataSources.value.filter(item => (!item.inversion && !!item.conversationOptions)))
 
 const prompt = ref<string>('')
 const loading = ref<boolean>(false)
@@ -44,7 +45,7 @@ const promptStore = usePromptStore()
 
 // 使用storeToRefs，保证store修改后，联想部分能够重新渲染
 const { promptList: promptTemplate } = storeToRefs<any>(promptStore)
-
+const authStore = useAuthStore()
 // 未知原因刷新页面，loading 状态不会重置，手动重置
 dataSources.value.forEach((item, index) => {
   if (item.loading)
@@ -52,6 +53,10 @@ dataSources.value.forEach((item, index) => {
 })
 
 function handleSubmit() {
+  if (!authStore.token) {
+    window.$message.warning("请先登录")
+    return
+  }
   onConversation()
 }
 
@@ -73,8 +78,8 @@ async function onConversation() {
       text: message,
       inversion: true,
       error: false,
-      conversationOptions: null,
-      requestOptions: { prompt: message, options: null },
+      loading: false,
+      role: 'user'
     },
   )
   scrollToBottom()
@@ -82,21 +87,16 @@ async function onConversation() {
   loading.value = true
   prompt.value = ''
 
-  let options: Chat.ConversationRequest = {}
-  const lastContext = conversationList.value[conversationList.value.length - 1]?.conversationOptions
-  if (lastContext && usingContext.value)
-    options = { ...lastContext }
 
   addChat(
     +uuid,
     {
       dateTime: new Date().toLocaleString(),
       text: '',
+      role: 'user',
       loading: true,
       inversion: false,
       error: false,
-      conversationOptions: null,
-      requestOptions: { prompt: message, options: { ...options } },
     },
   )
 
@@ -106,30 +106,30 @@ async function onConversation() {
     const eventSource = new EventSource(`/api/chatgtp/msg/callback/${chatId}`)
     //
     const fetchChatAPIOnce = (event: any) => {
-      const data = JSON.parse(event.data)
-      if (data.type == "end") {
+      if (event.data == "[DONE]") {
         eventSource.close()
         return
       }
+      const data = JSON.parse(event.data)
       //
       try {
-        lastText += data.data
+        lastText += data.choices[0].delta.content
         updateChat(
           +uuid,
           dataSources.value.length - 1,
           {
             dateTime: new Date().toLocaleString(),
             text: lastText,
+            role: 'system',
             inversion: false,
             error: false,
             loading: true,
-            conversationOptions: { conversationId: "1", parentMessageId: "1" },
-            requestOptions: { prompt: message, options: { ...options } },
+
           },
         )
 
         if (openLongReply && data.detail.choices[0].finish_reason === 'length') {
-          options.parentMessageId = data.id
+          // options.parentMessageId = data.id
           lastText = data.text
           message = ''
         }
@@ -144,27 +144,45 @@ async function onConversation() {
     }
     //
 
-    ChatGTP4({
-      chatId: chatId,
-      messages: [
-        {
-          role: 'user',
-          content: message,
-        }],
-    }).then(res => {
-      if (res.status === 0) {
-
-        scrollToBottom()
-        //
-
-        eventSource.addEventListener('message', fetchChatAPIOnce)
-        eventSource.addEventListener('error', (event) => {
-          console.error('发生错误：', event)
+    let msgs: Chat.Message[] = []
+    dataSources.value.forEach(i => {
+      if (!i.error && !i.loading) {
+        msgs.push({
+          role: i.role,
+          content: i.text
         })
       }
-
+    })
+    //
+    const cp = await ChatGTP({
+      chatId: chatId,
+      messages: msgs,
     })
 
+    if (cp.status === 0) {
+      scrollToBottom()
+      //
+      eventSource.addEventListener('message', fetchChatAPIOnce)
+      eventSource.addEventListener('error', (event) => {
+        console.error('发生错误：', event)
+      })
+    } else if (cp.status == 401) {
+
+      updateChat(
+        +uuid,
+        dataSources.value.length - 1,
+        {
+          dateTime: new Date().toLocaleString(),
+          text: cp.message,
+          inversion: false,
+          error: true,
+          loading: false,
+          role: 'system'
+        },
+      )
+      authStore.removeToken()
+      scrollToBottomIfAtBottom()
+    }
 
   }
   catch (error: any) {
@@ -203,11 +221,10 @@ async function onConversation() {
       {
         dateTime: new Date().toLocaleString(),
         text: errorMessage,
+        role: 'system',
         inversion: false,
         error: true,
         loading: false,
-        conversationOptions: null,
-        requestOptions: { prompt: message, options: { ...options } },
       },
     )
     scrollToBottomIfAtBottom()
@@ -223,77 +240,90 @@ async function onRegenerate(index: number) {
 
   controller = new AbortController()
 
-  const { requestOptions } = dataSources.value[index]
-
-  let message = requestOptions?.prompt ?? ''
-
-  let options: Chat.ConversationRequest = {}
-
-  if (requestOptions.options)
-    options = { ...requestOptions.options }
-
   loading.value = true
-
-  updateChat(
-    +uuid,
-    index,
-    {
-      dateTime: new Date().toLocaleString(),
-      text: '',
-      inversion: false,
-      error: false,
-      loading: true,
-      conversationOptions: null,
-      requestOptions: { prompt: message, options: { ...options } },
-    },
-  )
 
   try {
     let lastText = ''
-    const fetchChatAPIOnce = async () => {
-      await fetchChatAPIProcess<Chat.ConversationResponse>({
-        prompt: message,
-        options,
-        signal: controller.signal,
-        onDownloadProgress: ({ event }) => {
-          const xhr = event.target
-          const { responseText } = xhr
-          // Always process the final line
-          const lastIndex = responseText.lastIndexOf('\n', responseText.length - 2)
-          let chunk = responseText
-          if (lastIndex !== -1)
-            chunk = responseText.substring(lastIndex)
-          try {
-            const data = JSON.parse(chunk)
-            updateChat(
-              +uuid,
-              index,
-              {
-                dateTime: new Date().toLocaleString(),
-                text: lastText + (data.text ?? ''),
-                inversion: false,
-                error: false,
-                loading: true,
-                conversationOptions: { conversationId: data.conversationId, parentMessageId: data.id },
-                requestOptions: { prompt: message, options: { ...options } },
-              },
-            )
+    const chatId = v4()
+    const eventSource = new EventSource(`/api/chatgtp/msg/callback/${chatId}`)
+    //
+    const fetchChatAPIOnce = (event: any) => {
+      if (event.data == "[DONE]") {
+        eventSource.close()
+        return
+      }
+      const data = JSON.parse(event.data)
+      //
+      try {
+        lastText += data.choices[0].delta.content
+        updateChat(
+          +uuid,
+          index,
+          {
+            dateTime: new Date().toLocaleString(),
+            text: lastText,
+            role: 'system',
+            inversion: false,
+            error: false,
+            loading: true,
 
-            if (openLongReply && data.detail.choices[0].finish_reason === 'length') {
-              options.parentMessageId = data.id
-              lastText = data.text
-              message = ''
-              return fetchChatAPIOnce()
-            }
-          }
-          catch (error) {
-            //
-          }
-        },
-      })
-      updateChatSome(+uuid, index, { loading: false })
+          },
+        )
+
+        if (openLongReply && data.detail.choices[0].finish_reason === 'length') {
+          lastText = data.text
+        }
+
+        scrollToBottomIfAtBottom()
+      }
+      catch (error) {
+        console.error(error)
+        //
+      }
+      updateChatSome(+uuid, dataSources.value.length - 1, { loading: false })
     }
-    await fetchChatAPIOnce()
+    //
+    let msgs: Chat.Message[] = []
+    for (let i = 0; i < index; i++) {
+      const it = dataSources.value[i]
+      if (!it.error && !it.loading) {
+        msgs.push({
+          role: it.role,
+          content: it.text
+        })
+      }
+    }
+    //
+    const cp = await ChatGTP({
+      chatId: chatId,
+      messages: msgs,
+    })
+
+    if (cp.status === 0) {
+      scrollToBottom()
+      //
+      eventSource.addEventListener('message', fetchChatAPIOnce)
+      eventSource.addEventListener('error', (event) => {
+        console.error('发生错误：', event)
+      })
+    } else if (cp.status == 401) {
+
+      updateChat(
+        +uuid,
+        dataSources.value.length - 1,
+        {
+          dateTime: new Date().toLocaleString(),
+          text: cp.message,
+          inversion: false,
+          error: true,
+          loading: false,
+          role: 'system'
+        },
+      )
+      authStore.removeToken()
+      scrollToBottomIfAtBottom()
+    }
+
   }
   catch (error: any) {
     if (error.message === 'canceled') {
@@ -315,11 +345,10 @@ async function onRegenerate(index: number) {
       {
         dateTime: new Date().toLocaleString(),
         text: errorMessage,
+        role: 'system',
         inversion: false,
         error: true,
         loading: false,
-        conversationOptions: null,
-        requestOptions: { prompt: message, options: { ...options } },
       },
     )
   }
@@ -464,7 +493,18 @@ const footerClass = computed(() => {
     classes = ['sticky', 'left-0', 'bottom-0', 'right-0', 'p-2', 'pr-3', 'overflow-hidden']
   return classes
 })
-
+const options = [
+  {
+    label: "chatgtp-3.5",
+    value: 'chatgtp-3.5'
+  },
+  {
+    label: "chatgtp-4",
+    value: 'chatgtp-4',
+    disabled: true
+  }
+]
+const value = ref<string>("chatgtp-3.5")
 onMounted(() => {
   scrollToBottom()
   if (inputRef.value && !isMobile.value)
@@ -478,75 +518,84 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="flex flex-col w-full h-full">
-    <!-- <HeaderComponent
+  <ChatLayout>
+    <template v-slot:charts>
+      <div class="flex flex-col w-full" style="height: 90vh;">
+        <!-- <HeaderComponent
       v-if="isMobile"
       :using-context="usingContext"
       @export="handleExport"
       @toggle-using-context="toggleUsingContext"
     /> -->
-    <main class="flex-1 overflow-hidden">
-      <div id="scrollRef" ref="scrollRef" class="h-full overflow-hidden overflow-y-auto">
-        <div id="image-wrapper" class="w-full max-w-screen-xl m-auto dark:bg-[#101014]"
-          :class="[isMobile ? 'p-2' : 'p-4']">
-          <template v-if="!dataSources.length">
-            <div class="flex items-center justify-center mt-4 text-center text-neutral-300">
-              <SvgIcon icon="ri:bubble-chart-fill" class="mr-2 text-3xl" />
-              <span>Aha~</span>
+        <main class="flex-1 overflow-hidden">
+          <div id="scrollRef" ref="scrollRef" class="h-full overflow-hidden overflow-y-auto">
+            <div id="image-wrapper" class="w-full max-w-screen-xl m-auto dark:bg-[#101014]"
+              :class="[isMobile ? 'p-2' : 'p-4']">
+              <template v-if="!dataSources.length">
+                <div class="flex items-center justify-center mt-4 text-center text-neutral-300">
+                  <SvgIcon icon="ri:bubble-chart-fill" class="mr-2 text-3xl" />
+                  <span>FreeAIBox~</span>
+                </div>
+              </template>
+              <template v-else>
+                <div>
+                  <Message v-for="(item, index) of dataSources" :key="index" :date-time="item.dateTime" :text="item.text"
+                    :inversion="item.inversion" :error="item.error" :loading="item.loading"
+                    @regenerate="onRegenerate(index)" @delete="handleDelete(index)" />
+                  <div class="sticky bottom-0 left-0 flex justify-center">
+                    <NButton v-if="loading" type="warning" @click="handleStop">
+                      <template #icon>
+                        <SvgIcon icon="ri:stop-circle-line" />
+                      </template>
+                      Stop Responding
+                    </NButton>
+                  </div>
+                </div>
+              </template>
             </div>
-          </template>
-          <template v-else>
-            <div>
-              <Message v-for="(item, index) of dataSources" :key="index" :date-time="item.dateTime" :text="item.text"
-                :inversion="item.inversion" :error="item.error" :loading="item.loading" @regenerate="onRegenerate(index)"
-                @delete="handleDelete(index)" />
-              <div class="sticky bottom-0 left-0 flex justify-center">
-                <NButton v-if="loading" type="warning" @click="handleStop">
-                  <template #icon>
-                    <SvgIcon icon="ri:stop-circle-line" />
-                  </template>
-                  Stop Responding
-                </NButton>
-              </div>
-            </div>
-          </template>
-        </div>
-      </div>
-    </main>
-    <footer :class="footerClass">
-      <div class="w-full max-w-screen-xl m-auto">
-        <div class="flex items-center justify-between space-x-2">
-          <HoverButton @click="handleClear">
-            <span class="text-xl text-[#4f555e] dark:text-white">
-              <SvgIcon icon="ri:delete-bin-line" />
-            </span>
-          </HoverButton>
-          <HoverButton v-if="!isMobile" @click="handleExport">
-            <span class="text-xl text-[#4f555e] dark:text-white">
-              <SvgIcon icon="ri:download-2-line" />
-            </span>
-          </HoverButton>
-          <!-- <HoverButton v-if="!isMobile" @click="toggleUsingContext">
+          </div>
+        </main>
+        <footer :class="footerClass">
+          <div class="w-full max-w-screen-xl m-auto">
+            <div class="flex items-center justify-between space-x-2">
+              <HoverButton @click="handleClear">
+                <span class="text-xl text-[#4f555e] dark:text-white">
+                  <SvgIcon icon="ri:delete-bin-line" />
+                </span>
+              </HoverButton>
+              <HoverButton v-if="!isMobile" @click="handleExport">
+                <span class="text-xl text-[#4f555e] dark:text-white">
+                  <SvgIcon icon="ri:download-2-line" />
+                </span>
+              </HoverButton>
+              <span class="w-48">
+                <n-select v-model:value="value" :options="options" />
+              </span>
+
+              <!-- <HoverButton v-if="!isMobile" @click="toggleUsingContext">
             <span class="text-xl" :class="{ 'text-[#4b9e5f]': usingContext, 'text-[#a8071a]': !usingContext }">
               <SvgIcon icon="ri:chat-history-line" />
             </span>
           </HoverButton> -->
-          <NAutoComplete v-model:value="prompt" :options="searchOptions" :render-label="renderOption">
-            <template #default="{ handleInput, handleBlur, handleFocus }">
-              <NInput ref="inputRef" v-model:value="prompt" type="textarea" :placeholder="placeholder"
-                :autosize="{ minRows: 1, maxRows: isMobile ? 4 : 8 }" @input="handleInput" @focus="handleFocus"
-                @blur="handleBlur" @keypress="handleEnter" />
-            </template>
-          </NAutoComplete>
-          <NButton type="primary" :disabled="buttonDisabled" @click="handleSubmit">
-            <template #icon>
-              <span class="dark:text-black">
-                <SvgIcon icon="ri:send-plane-fill" />
-              </span>
-            </template>
-          </NButton>
-        </div>
+              <NAutoComplete v-model:value="prompt" :options="searchOptions" :render-label="renderOption">
+                <template #default="{ handleInput, handleBlur, handleFocus }">
+                  <NInput ref="inputRef" v-model:value="prompt" type="textarea" :placeholder="placeholder"
+                    :autosize="{ minRows: 1, maxRows: isMobile ? 4 : 8 }" @input="handleInput" @focus="handleFocus"
+                    @blur="handleBlur" @keypress="handleEnter" />
+                </template>
+              </NAutoComplete>
+              <NButton type="primary" :disabled="buttonDisabled" @click="handleSubmit">
+                <template #icon>
+                  <span class="dark:text-black">
+                    <SvgIcon icon="ri:send-plane-fill" />
+                  </span>
+                </template>
+              </NButton>
+            </div>
+          </div>
+        </footer>
       </div>
-    </footer>
-  </div>
+    </template>
+
+  </ChatLayout>
 </template>

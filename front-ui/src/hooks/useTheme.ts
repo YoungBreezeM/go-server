@@ -22,7 +22,10 @@ export function useTheme() {
   const themeOverrides = computed<GlobalThemeOverrides>(() => {
     if (isDark.value) {
       return {
-        common: {},
+        common: {
+
+        },
+
       }
     }
     return {}
@@ -31,7 +34,6 @@ export function useTheme() {
   watch(
     () => isDark.value,
     (dark) => {
-      console.log(dark)
       if (dark)
         document.documentElement.classList.add('dark')
       else

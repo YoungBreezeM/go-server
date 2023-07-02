@@ -2,20 +2,16 @@ import type { App } from 'vue'
 import type { RouteRecordRaw } from 'vue-router'
 import { createRouter, createWebHistory } from 'vue-router'
 import { setupPageGuard } from './permission'
-import { ChatLayout } from '@/views/layout'
-
+import Layout from '@/views/layout/index.vue'
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
-    name: 'Root',
-    component: ChatLayout,
-    redirect: '/login',
+    redirect: 'home'
+  },
+  {
+    path: '/',
+    component: Layout,
     children: [
-      {
-        path: '/chat/:uuid?',
-        name: 'Chat',
-        component: () => import('@/views/chat/index.vue'),
-      },
       {
         path: '/home',
         name: 'home',
@@ -24,16 +20,21 @@ const routes: RouteRecordRaw[] = [
     ],
   },
   {
-    path: '/login',
-    name: 'login',
-    component: () => import('@/views/login/index.vue'),
+    path: '/',
+    component: Layout,
+    children: [
+      {
+        path: '/chat',
+        name: 'chat',
+        component: () => import('@/views/chat/index.vue'),
+      },
+    ]
   },
   {
     path: '/404',
     name: '404',
     component: () => import('@/views/exception/404/index.vue'),
   },
-
   {
     path: '/500',
     name: '500',

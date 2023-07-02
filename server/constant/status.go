@@ -2,5 +2,5 @@ package constant
 
 const (
 	SUBSCRIBE   = "subscribe"
-	UNSUBSCRIBE = "Unsubscribe"
+	UNSUBSCRIBE = "unsubscribe"
 )

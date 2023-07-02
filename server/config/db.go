@@ -7,3 +7,10 @@ type MySql struct {
 	Password string `yaml:"password"`
 	Level    int    `yaml:"level"`
 }
+
+type Redis struct {
+	Host     string `yaml:"host"`
+	Port     int    `yaml:"port"`
+	Password string `yaml:"password"`
+	DB       int    `yaml:"db"`
+}

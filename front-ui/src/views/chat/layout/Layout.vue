@@ -2,16 +2,14 @@
 import { computed } from 'vue'
 import { NLayout, NLayoutContent } from 'naive-ui'
 import Sider from './sider/index.vue'
-import Permission from './Permission.vue'
-import HeaderComponent from '@/components/common/Header/index.vue'
 import { useBasicLayout } from '@/hooks/useBasicLayout'
 
-import { useAppStore, useAuthStore } from '@/store'
+import { useAppStore } from '@/store'
 
 // const router = useRouter()
 const appStore = useAppStore()
 // const chatStore = useChatStore()
-const authStore = useAuthStore()
+// const authStore = useAuthStore()
 
 // router.replace({ name: 'Chat', params: { uuid: chatStore.active } })
 
@@ -19,7 +17,7 @@ const { isMobile } = useBasicLayout()
 
 const collapsed = computed(() => appStore.siderCollapsed)
 
-const needPermission = computed(() => !!authStore.session?.auth && !authStore.token)
+// const needPermission = computed(() => !!authStore.session?.auth && !authStore.token)
 
 const getMobileClass = computed(() => {
   if (isMobile.value)
@@ -36,18 +34,14 @@ const getContainerClass = computed(() => {
 </script>
 
 <template>
-  <div class="h-full dark:bg-[#24272e] transition-all" :class="[isMobile ? 'p-0' : 'p-4']">
+  <div class="h-full  dark:bg-[#24272e] transition-all m-auto" :class="[isMobile ? 'p-0' : 'p-4']">
     <div class="h-full overflow-hidden" :class="getMobileClass">
-      <NLayout class="z-40 transition" :class="getContainerClass" has-sider>
+      <NLayout class="transition" :class="getContainerClass" has-sider>
         <Sider />
         <NLayoutContent class="h-full">
-          <HeaderComponent v-if="isMobile" />
-          <RouterView v-slot="{ Component, route }">
-            <component :is="Component" :key="route.fullPath" />
-          </RouterView>
+          <slot name="charts"></slot>
         </NLayoutContent>
       </NLayout>
     </div>
-    <Permission :visible="needPermission" />
   </div>
 </template>

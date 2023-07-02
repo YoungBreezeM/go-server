@@ -1,9 +1,14 @@
 import { getToken } from '@/store/modules/auth/helper'
 import type { Router } from 'vue-router'
+import { useMenuStore } from '@/store'
 
 export function setupPageGuard(router: Router) {
+
   router.beforeEach(async (to, from, next) => {
-    if (to.path == '/login' || to.path == "/404" || to.path == "/500") {
+    const menuStorage = useMenuStore()
+    menuStorage.menuInfo.Active = to.path
+
+    if (to.path == "/404" || to.path == "/500") {
       next()
       return
     }

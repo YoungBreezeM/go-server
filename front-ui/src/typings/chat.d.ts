@@ -3,11 +3,10 @@ declare namespace Chat {
 	interface Chat {
 		dateTime: string
 		text: string
+		role: string
 		inversion?: boolean
 		error?: boolean
 		loading?: boolean
-		conversationOptions?: ConversationRequest | null
-		requestOptions: { prompt: string; options?: ConversationRequest | null }
 	}
 
 	interface History {
@@ -26,6 +25,11 @@ declare namespace Chat {
 	interface ConversationRequest {
 		conversationId?: string
 		parentMessageId?: string
+	}
+
+	interface Message {
+		role: string
+		content: string
 	}
 
 	interface ConversationResponse {

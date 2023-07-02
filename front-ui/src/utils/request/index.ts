@@ -11,7 +11,6 @@ export interface HttpOption {
   signal?: GenericAbortSignal
   beforeRequest?: () => void
   afterRequest?: () => void
-  responseType?: string
 }
 
 export interface Response<T = any> {
@@ -21,7 +20,7 @@ export interface Response<T = any> {
 }
 
 function http<T = any>(
-  { url, data, method, headers, onDownloadProgress, signal, beforeRequest, afterRequest, responseType }: HttpOption,
+  { url, data, method, headers, onDownloadProgress, signal, beforeRequest, afterRequest }: HttpOption,
 ) {
   const successHandler = (res: AxiosResponse<Response<T>>) => {
     // const authStore = useAuthStore()
@@ -38,22 +37,7 @@ function http<T = any>(
 
   const failHandler = (error: Response<Error>) => {
     afterRequest?.()
-    console.log(error)
-    if (error.response.status == 401) {
-
-      window.$message?.warning(error.response.data.message)
-      setTimeout(() => {
-        window.location.href = "/login"
-      }, 3000)
-
-    }
-    if (error.response.status == 402) {
-      window.$message?.warning("当前积分不足请充值")
-    }
-    if (error.response.status == 501) {
-      window.$message?.warning(error.response.data.message)
-    }
-    // throw new Error(error?.message || 'Error')
+    throw new Error(error?.message || 'Error')
   }
 
   beforeRequest?.()
@@ -63,27 +47,26 @@ function http<T = any>(
   const params = Object.assign(typeof data === 'function' ? data() : data ?? {}, {})
 
   return method === 'GET'
-    ? request.get(url, { params, signal, onDownloadProgress }).then(successHandler, failHandler)
+    ? request.get(url, { params, signal }).then(successHandler, failHandler)
     : request.post(url, params, { headers, signal, onDownloadProgress }).then(successHandler, failHandler)
 }
 
 export function get<T = any>(
-  { url, data, method = 'GET', onDownloadProgress, signal, beforeRequest, afterRequest, responseType }: HttpOption,
+  { url, data, method = 'GET', signal, beforeRequest, afterRequest, }: HttpOption,
 ): Promise<Response<T>> {
   return http<T>({
     url,
     method,
     data,
-    onDownloadProgress,
     signal,
     beforeRequest,
     afterRequest,
-    responseType,
+
   })
 }
 
 export function post<T = any>(
-  { url, data, method = 'POST', headers, onDownloadProgress, signal, beforeRequest, afterRequest, responseType }: HttpOption,
+  { url, data, method = 'POST', headers, onDownloadProgress, signal, beforeRequest, afterRequest, }: HttpOption,
 ): Promise<Response<T>> {
   return http<T>({
     url,
@@ -94,7 +77,6 @@ export function post<T = any>(
     signal,
     beforeRequest,
     afterRequest,
-    responseType,
   })
 }
 

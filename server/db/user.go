@@ -53,7 +53,7 @@ func (user *User) FindUserByOpenId() error {
 }
 
 func (user User) AddUser() error {
-	if err := MYSQL.Create(user).Error; err != nil {
+	if err := MYSQL.Create(&user).Error; err != nil {
 		log.Log.Errorf("user add err:%e", err)
 		return err
 	}

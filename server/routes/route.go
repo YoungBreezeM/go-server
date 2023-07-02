@@ -16,8 +16,8 @@ import (
 func AuthMiddleware(c *gin.Context) {
 	token := c.GetHeader("Authorization")
 	if len(token) <= 0 {
-		c.JSON(401, models.R[string]{
-			Status:  0,
+		c.JSON(200, models.R[string]{
+			Status:  401,
 			Message: constant.UNAITHORIZED,
 		})
 		c.Abort()
@@ -25,8 +25,8 @@ func AuthMiddleware(c *gin.Context) {
 	}
 	//
 	if !services.VerifyToken(token) {
-		c.JSON(401, models.R[string]{
-			Status:  0,
+		c.JSON(200, models.R[string]{
+			Status:  401,
 			Message: constant.UNAITHORIZED,
 		})
 		c.Abort()

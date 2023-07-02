@@ -12,6 +12,7 @@ type Config struct {
 	Port   uint16 `yaml:"port"`
 	Log    Log    `yaml:"log"`
 	MySql  MySql  `yaml:"mysql"`
+	Redis  Redis  `yaml:"redis"`
 	WeChat WeChat `yaml:"wechat"`
 }
 
