@@ -6,6 +6,7 @@ import (
 	"server/constant"
 	"server/log"
 	"server/models"
+	"server/services"
 
 	"github.com/gin-gonic/gin"
 )
@@ -27,6 +28,8 @@ func Gtp4Chat(c *gin.Context) {
 	msg.ChatId = cq.ChatId
 	//
 	go msg.SendMsg(ChatGPTResChan)
+
+	services.RecordChat(c, msg.ChatId, cq.Messages)
 
 	c.JSON(200, models.R[string]{
 		Status:  0,

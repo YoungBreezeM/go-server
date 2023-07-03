@@ -1,12 +1,11 @@
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router'
-import { Login } from '@/api/index'
 // import { computed } from 'vue'
 import { useAuthStore, } from '@/store'
 import { NCard, NAvatar } from 'naive-ui'
 const route = useRoute()
 const router = useRouter()
-const { key } = route.query
+const { key, openId } = route.query
 const authSt = useAuthStore()
 // const userStore = useUserStore()
 // //
@@ -17,15 +16,11 @@ const authSt = useAuthStore()
 //   })
 // }
 // console.log(route.query)
-if (key) {
+if (key && openId) {
   authSt.removeToken()
-  Login<string>(key).then(res => {
-    if (res.status == 0) {
-      authSt.setToken(res.data)
-      router.push({
-        path: '/home'
-      })
-    }
+  authSt.setToken(key.toLocaleString() + openId)
+  router.push({
+    path: `/chat/${openId}`
   })
 }
 const items = [

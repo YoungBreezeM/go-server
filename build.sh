@@ -9,6 +9,7 @@ cd $basepath/server && ./build.sh
 cp -r $basepath/server/build/* $basepath/$pkgname
 cd $basepath/front-ui&& npm run build
 cp -r $basepath/front-ui/dist $basepath/$pkgname
+cd $basepath
 tar -cvf $pkgname.tar $pkgname/
 #
 echo "====== DONE ======"

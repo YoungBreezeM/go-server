@@ -8,6 +8,9 @@ import (
 	"server/log"
 	"server/models"
 	"server/utils"
+
+	"github.com/gin-gonic/gin"
+	"github.com/go-redis/redis/v8"
 )
 
 func Subscribe(openId string) {
@@ -66,6 +69,18 @@ func VerifyToken(token string) bool {
 	return false
 }
 
+func VerifyKey(c *gin.Context, token string) bool {
+	key := token[:32]
+	openId := token[32:]
+	val, err := db.Redis.Get(c, openId).Result()
+	if err != nil {
+		if err == redis.Nil {
+			return false
+		}
+		return false
+	}
+	return key == val
+}
 func GetUserInfoByToken(token string) (*db.User, error) {
 	tokenClaims, err := utils.ParseToken(token)
 	//

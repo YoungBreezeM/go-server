@@ -24,7 +24,7 @@ func AuthMiddleware(c *gin.Context) {
 		return
 	}
 	//
-	if !services.VerifyToken(token) {
+	if !services.VerifyKey(c, token) {
 		c.JSON(200, models.R[string]{
 			Status:  401,
 			Message: constant.UNAITHORIZED,
@@ -48,7 +48,7 @@ func SetupRouter() *gin.Engine {
 	// router.GET("/wx/qrCode/:sceneId", controllers.GetWeChatQrCode)
 	router.POST("/notify", controllers.WatchWechatSubscribe)
 	router.GET("/notify", controllers.WechatCheckToken)
-	router.GET("/loginByKey", controllers.Login)
+	// router.GET("/loginByKey", controllers.Login)
 	// router.GET("/watchQrCodeScan", controllers.WatchQrcodeIsScan)
 	//
 	router.GET("/chatgtp/msg/callback/:chatId", controllers.ChatGTPCallback)

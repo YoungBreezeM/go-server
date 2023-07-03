@@ -248,10 +248,10 @@ func WatchWechatSubscribe(c *gin.Context) {
 				FromUserName: callbackMsg.ToUserName,
 				CreateTime:   time.Now().Unix(),
 				MsgType:      "text",
-				Content:      fmt.Sprintf("%s\n点开下面这个链接进入网页。\nhttp://localhost:3000/home?key=%s", config.DESC, key),
+				Content:      fmt.Sprintf("%s\n点开下面这个链接进入网页。\nhttp://%s/home?key=%s&openId=%s", config.DESC, config.Cfg.IP, key, callbackMsg.FromUserName),
 			}
 			//
-			db.Redis.Set(c, key, callbackMsg.FromUserName, time.Minute*60)
+			db.Redis.Set(c, callbackMsg.FromUserName, key, time.Minute*60)
 			c.XML(http.StatusOK, replyMsg)
 		} else {
 			replyMsg = models.TextReply{
@@ -263,8 +263,6 @@ func WatchWechatSubscribe(c *gin.Context) {
 			}
 			c.XML(http.StatusOK, replyMsg)
 		}
-
-		// 设置回复消息的Content-Type为XML
 
 	}
 }

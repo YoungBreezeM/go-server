@@ -145,14 +145,16 @@ async function onConversation() {
     //
 
     let msgs: Chat.Message[] = []
-    dataSources.value.forEach(i => {
-      if (!i.error && !i.loading) {
+    for (let i = 0; i < dataSources.value.length; i++) {
+      const it = dataSources.value[i]
+      if (!it.error && !it.loading) {
         msgs.push({
-          role: i.role,
-          content: i.text
+          role: it.role,
+          content: it.text
         })
       }
-    })
+
+    }
     //
     const cp = await ChatGTP({
       chatId: chatId,

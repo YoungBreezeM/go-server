@@ -10,6 +10,7 @@ import (
 type Config struct {
 	Host   string `yaml:"host"`
 	Port   uint16 `yaml:"port"`
+	IP     string `yaml:"ip"`
 	Log    Log    `yaml:"log"`
 	MySql  MySql  `yaml:"mysql"`
 	Redis  Redis  `yaml:"redis"`
